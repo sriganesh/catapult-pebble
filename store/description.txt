@@ -1,0 +1,11 @@
+Publish any atproto record, in any lexicon, from your Pebble.
+
+- Post to Bluesky
+- Set your Statusphere status
+- Dictate posts and voice notes
+- Keep private notes in permissioned spaces (alpha)
+- Bring in records you built on at.new
+
+See everything you publish on Taproot (atproto.at).
+
+Sign in with OAuth or an app password.

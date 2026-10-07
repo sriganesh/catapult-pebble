@@ -1,0 +1,2190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catapult</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f6f6f4;
+  --surface: #ffffff;
+  --surface-2: #f0f0ed;
+  --line: #dededa;
+  --ink: #16160f;
+  --ink-2: #5f5f58;
+  --ink-3: #8a8a82;
+  --accent: #1f5fd0;
+  --accent-ink: #ffffff;
+  --danger: #b3261e;
+  --ok: #196c3a;
+  --radius: 12px;
+  --pad: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131315;
+    --surface: #1c1c1f;
+    --surface-2: #232327;
+    --line: #34343a;
+    --ink: #f2f2ef;
+    --ink-2: #a8a8a2;
+    --ink-3: #79797a;
+    --accent: #6ea8ff;
+    --accent-ink: #10101a;
+    --danger: #ff9a92;
+    --ok: #73d69b;
+  }
+}
+* { box-sizing: border-box; }
+/* [hidden] is only a UA display:none, so the flex rules on .url-row and
+   .status would override it. */
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  padding: env(safe-area-inset-top) 0 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+.wrap { max-width: 640px; margin: 0 auto; padding: 20px var(--pad) 120px; }
+
+header { margin: 8px 0 24px; }
+h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+}
+header p { margin: 6px 0 0; color: var(--ink-2); font-size: 14px; }
+
+h2 {
+  margin: 28px 0 10px;
+  font-size: 12px;
+  font-weight: 640;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--pad);
+  margin-bottom: 12px;
+}
+
+label { display: block; margin-bottom: 14px; }
+label:last-child { margin-bottom: 0; }
+.lbl {
+  display: block;
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--ink-2);
+  margin-bottom: 5px;
+}
+.hint { font-size: 12px; color: var(--ink-3); margin-top: 5px; line-height: 1.45; }
+
+input[type=text], input[type=password], textarea, select {
+  width: 100%;
+  padding: 10px 11px;
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  outline: none;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+textarea {
+  min-height: 132px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+button {
+  font: inherit;
+  font-weight: 560;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  padding: 9px 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+button:active { transform: translateY(1px); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+button.ghost { background: transparent; }
+button.danger { color: var(--danger); background: transparent; }
+button svg { width: 15px; height: 15px; flex: none; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.spacer { flex: 1 1 auto; }
+
+.btn-head {
+  scroll-margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  font-weight: 600;
+}
+.btn-head .chev { transition: transform .18s ease; color: var(--ink-3); }
+.btn-head[aria-expanded=true] .chev { transform: rotate(90deg); }
+.btn-head .meta { font-weight: 400; font-size: 12px; color: var(--ink-3); }
+
+/* Without touch-action:none, iOS treats the drag as a scroll and pointermove
+   never fires. */
+.grip {
+  flex: none; padding: 6px 2px; margin: -6px 0 -6px -4px;
+  background: none; border: 0; color: var(--ink-3);
+  touch-action: none; cursor: grab;
+}
+.grip svg { width: 16px; height: 16px; }
+.grip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.card.dragging { position: relative; z-index: 5; cursor: grabbing;
+  box-shadow: 0 8px 22px rgba(0,0,0,.18); opacity: .97; }
+.card.shifting { transition: transform .16s ease; }
+.body { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+.opt { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+.opt input { flex: 1 1 auto; }
+.opt button { flex: none; padding: 9px 10px; }
+
+.pill {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  margin: 0 5px 5px 0;
+}
+.pill.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+.pill.fill { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+
+.status { font-size: 13px; margin-top: 10px; display: flex; gap: 7px; align-items: flex-start; }
+.status svg { width: 15px; height: 15px; flex: none; margin-top: 2px; }
+.status.ok { color: var(--ok); }
+.status.bad { color: var(--danger); }
+.status.busy { color: var(--ink-2); }
+.status.busy svg { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .status.busy svg { animation: none; }
+  .btn-head .chev { transition: none; }
+  button:active { transform: none; }
+}
+
+.starter {
+  display: block; width: 100%; text-align: left;
+  border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  background: var(--surface); padding: 12px 14px;
+}
+.starter:last-child { border-bottom: 0; }
+.starter[disabled] { opacity: .5; }
+.starter .blocked { display: block; margin-top: 4px; color: var(--danger); font-size: 12px; }
+.starter b { font-weight: 600; }
+.starter .hint { margin: 0; }
+
+.step { display: flex; gap: 10px; align-items: flex-start; margin: 18px 0 8px; }
+.step:first-of-type { margin-top: 4px; }
+.step-n {
+  flex: none; width: 22px; height: 22px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink);
+  font-size: 12px; font-weight: 700; line-height: 22px; text-align: center;
+}
+.step .hint { margin-top: 3px; }
+.url-row { display: flex; gap: 8px; align-items: center; margin-left: 32px; }
+.url-row input { flex: 1 1 auto; }
+.url-row button { flex: none; }
+.url {
+  flex: 1 1 auto; padding: 10px 11px; background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 9px;
+  font-size: 13px; word-break: break-all; user-select: all; -webkit-user-select: all;
+}
+details summary { cursor: pointer; padding: 4px 0; }
+.fold > summary { list-style: none; display: flex; align-items: baseline;
+  gap: 8px; padding: 6px 0; margin-top: 28px; }
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary h2 { margin: 0; }
+.fold > summary::after { content: '\203a'; margin-left: auto;
+  color: var(--ink-3); font-size: 18px; line-height: 1;
+  transition: transform .18s ease; }
+.fold[open] > summary::after { transform: rotate(90deg); }
+.fold > summary .meta { font-size: 12px; color: var(--ink-3); font-weight: 400; }
+
+.log { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.log-row { display: flex; gap: 10px; padding: 10px 14px; background: var(--surface);
+  border-bottom: 1px solid var(--line); align-items: baseline; }
+.log-row:last-child { border-bottom: 0; }
+.log-when { flex: none; font-size: 12px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums; min-width: 62px; }
+.log-what { flex: 1 1 auto; font-size: 13px; word-break: break-word; }
+.log-row.ok .log-what { color: var(--ok); }
+.log-row.bad .log-what { color: var(--danger); }
+
+.empty {
+  text-align: center;
+  padding: 28px 16px;
+  color: var(--ink-3);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+}
+
+footer {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+  padding: 12px var(--pad) calc(12px + env(safe-area-inset-bottom));
+}
+footer .inner { max-width: 640px; margin: 0 auto; display: flex; gap: 10px; }
+footer button { flex: 1 1 auto; justify-content: center; padding: 12px; }
+
+a { color: var(--accent); }
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  background: var(--surface-2);
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Catapult</h1>
+  <p>Publish records to the atmosphere.</p>
+</header>
+
+<h2>Accounts</h2>
+<div id="accounts"></div>
+<div class="row" style="margin-top:14px">
+  <button type="button" class="ghost" id="add-account">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+    <span id="add-account-label">Add account</span>
+  </button>
+</div>
+<div class="status" id="page-status" hidden></div>
+<p class="hint" id="save-note" style="margin-top:10px" hidden>
+  Nothing is stored until you press <b>Save to watch</b>.
+</p>
+
+<section id="buttons-section" hidden>
+<h2>Buttons</h2>
+<div id="buttons"></div>
+<div class="row">
+  <button type="button" id="add">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg>
+    Add button
+  </button>
+  <button type="button" class="ghost" id="import">
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5a3 3 0 0 0 4.24 0l2-2a3 3 0 0 0-4.24-4.24l-.7.7"/><path d="M9.5 6.5a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24l.7-.7"/></svg>
+    Import from at.new
+  </button>
+</div>
+<div id="starter-panel" style="margin:10px 0 0 0" hidden></div>
+<div class="url-row" id="import-panel" style="margin:10px 0 0 0" hidden>
+  <input type="text" id="import-link" placeholder="https://at.new/#record=..."
+         autocapitalize="none" autocorrect="off" spellcheck="false">
+  <button type="button" class="primary" id="import-go">Import</button>
+</div>
+<p class="hint" style="margin-top:10px">
+  Build a record on <code>at.new</code>, press <em>Share draft</em>, then paste the
+  link here. Placeholders come across too: <code>{{$now}}</code> fills in the time,
+  <code>{{mood}}</code> becomes a list you pick from on the watch, and
+  <code>{{$voice}}</code> makes the button record your voice.
+</p>
+</section>
+
+<section id="journal-section" hidden>
+<details id="journal-details" class="fold">
+  <summary><h2>Recent activity</h2><span class="meta" id="journal-count"></span></summary>
+  <div id="journal" style="margin-top:12px"></div>
+  <p class="hint" style="margin-top:10px">
+    Your recent posts, newest first, with the reason for anything that failed.
+  </p>
+</details>
+</section>
+
+<details id="developer" class="fold">
+  <summary><h2>Developer options</h2></summary>
+  <div class="card" style="margin-top:10px">
+    <p class="hint" style="margin-top:0">
+      Where this app looks up handles and DIDs. Leave a box empty to use the
+      address shown in it. You only need to change these if you run your own.
+    </p>
+    <div id="infra-fields"></div>
+    <div class="row" style="margin-top:4px">
+      <button type="button" id="infra-test">Test resolver</button>
+      <span class="spacer"></span>
+      <button type="button" class="ghost" id="infra-reset">Reset to defaults</button>
+    </div>
+    <div class="status" id="infra-status" hidden></div>
+  </div>
+</details>
+
+<p class="hint" id="version" style="margin-top:28px">Catapult __CATAPULT_VERSION__</p>
+
+</div>
+
+<footer>
+  <div class="inner">
+    <button type="button" class="ghost" id="cancel">Cancel</button>
+    <button type="button" class="primary" id="save">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4.5"/></svg>
+      Save to watch
+    </button>
+  </div>
+</footer>
+
+<!-- Seeded by src/pkjs/index.js when the page is opened from the watch app.
+     Left as null when the file is opened directly for development. -->
+<script>window.__ATCLICK__ = null;</script>
+<script>
+(function () {
+  'use strict';
+
+  var MAX_ITEMS = 16;
+  var MAX_OPTIONS = 8;
+  // Mirrors src/pkjs/settings.js, which builds the message the watch reads.
+  var MAX_LABEL_CHARS = 32;
+  var MAX_ACCOUNT_CHARS = 32;
+  var MAX_BLOB_BYTES = 1535;
+
+  /** Bytes a string takes as UTF-8, counting a surrogate pair once. */
+  function utf8Length(text) {
+    var bytes = 0;
+    for (var i = 0; i < text.length; i++) {
+      var code = text.charCodeAt(i);
+      if (code < 0x80) bytes += 1;
+      else if (code < 0x800) bytes += 2;
+      else if (code >= 0xd800 && code <= 0xdbff) { bytes += 4; i++; }
+      else bytes += 3;
+    }
+    return bytes;
+  }
+  var BUILTINS = ['$now', '$lang', '$did', '$handle', '$voice'];
+  var VOICE = '$voice';
+  var VARIABLE_RE = /\{\{(\$?[a-zA-Z][a-zA-Z0-9_]*)\}\}/g;
+  var NSID_RE = /^[a-zA-Z][a-zA-Z0-9-]*(\.[a-zA-Z][a-zA-Z0-9-]*)+$/;
+
+  // Default broker. Anyone running their own can change it per account.
+  var DEFAULT_BROKER_URL = 'https://pebble.atproto.broker';
+
+  var SVG = {
+    ok: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.2"/><path d="M5.3 8.2 7.2 10l3.5-3.7"/></svg>',
+    bad: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6.2"/><path d="M8 5v4M8 11h.01"/></svg>',
+    busy: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 2a6 6 0 1 0 6 6" /></svg>',
+    trash: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5 5 13h6l.5-8.5"/></svg>',
+    chev: '<svg class="chev" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg>',
+    up: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.5v-9M4 7.5 8 3.5l4 4"/></svg>',
+    down: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3.5v9M4 8.5 8 12.5l4-4"/></svg>',
+    link: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 9.5a3 3 0 0 0 4.24 0l2-2a3 3 0 0 0-4.24-4.24l-.7.7"/><path d="M9.5 6.5a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24l.7-.7"/></svg>',
+    grip: '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="6" cy="4" r="1.25"/><circle cx="10" cy="4" r="1.25"/><circle cx="6" cy="8" r="1.25"/><circle cx="10" cy="8" r="1.25"/><circle cx="6" cy="12" r="1.25"/><circle cx="10" cy="12" r="1.25"/></svg>',
+    share: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 10.5V2.5M5 5.5 8 2.5l3 3"/><path d="M3.5 9v3.5h9V9"/></svg>'
+  };
+
+  var initial = (window.__ATCLICK__ && typeof window.__ATCLICK__ === 'object') ? window.__ATCLICK__ : {};
+  var state = {
+    accounts: Array.isArray(initial.accounts) ? initial.accounts.slice() : [],
+    buttons: Array.isArray(initial.buttons) ? initial.buttons.slice() : [],
+    journal: Array.isArray(initial.journal) ? initial.journal.slice() : [],
+    infra: Object.assign({ resolver: '', plcDirectory: '', doh: '' }, initial.infra || {}),
+    open: -1,
+    openAccount: -1
+  };
+
+  function newAccountId() {
+    return 'a' + Date.now().toString(36) + Math.floor(Math.random() * 1000).toString(36);
+  }
+
+  function accountName(account, index) {
+    return account.label || account.handle || account.identifier || ('Account ' + (index + 1));
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  // variables --------------------------------------------------------------
+
+  function walkStrings(value, visit) {
+    if (typeof value === 'string') { visit(value); return; }
+    if (Array.isArray(value)) { value.forEach(function (v) { walkStrings(v, visit); }); return; }
+    if (value && typeof value === 'object') {
+      Object.keys(value).forEach(function (k) { walkStrings(value[k], visit); });
+    }
+  }
+
+  function listVariables(record) {
+    var builtins = [], users = [], unknown = [], seen = {};
+    walkStrings(record, function (text) {
+      VARIABLE_RE.lastIndex = 0;
+      var m;
+      while ((m = VARIABLE_RE.exec(text)) !== null) {
+        var name = m[1];
+        if (seen[name]) continue;
+        seen[name] = true;
+        if (name.charAt(0) === '$') {
+          (BUILTINS.indexOf(name) !== -1 ? builtins : unknown).push(name);
+        } else {
+          users.push(name);
+        }
+      }
+    });
+    return { builtins: builtins, users: users, unknown: unknown };
+  }
+
+  function parseRecord(text) {
+    try {
+      var parsed = JSON.parse(text);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+      return parsed;
+    } catch (e) { return null; }
+  }
+
+  // at.new links -----------------------------------------------------------
+
+  function base64UrlToBytes(value) {
+    var b64 = value.replace(/-/g, '+').replace(/_/g, '/');
+    b64 += '='.repeat((4 - (b64.length % 4)) % 4);
+    var binary = atob(b64);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+
+  // Mirrors taproot's compose payload encoding: dfl: raw-deflate, b64: plain,
+  // untagged raw or percent-encoded JSON.
+  function decodePayload(payload) {
+    var trimmed = String(payload || '').trim();
+    if (!trimmed) return Promise.resolve(null);
+
+    if (trimmed.indexOf('dfl:') === 0) {
+      if (typeof DecompressionStream === 'undefined') {
+        return Promise.reject(new Error('This browser cannot read compressed links'));
+      }
+      var bytes = base64UrlToBytes(trimmed.slice(4));
+      var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return new Response(stream).text();
+    }
+    if (trimmed.indexOf('b64:') === 0) {
+      return Promise.resolve(new TextDecoder().decode(base64UrlToBytes(trimmed.slice(4))));
+    }
+    if (trimmed.charAt(0) === '{') return Promise.resolve(trimmed);
+    try {
+      var decoded = decodeURIComponent(trimmed);
+      if (decoded.trim().charAt(0) === '{') return Promise.resolve(decoded.trim());
+    } catch (e) { /* malformed percent-encoding */ }
+    return Promise.resolve(null);
+  }
+
+  function fieldFrom(search, hash, name) {
+    var fromHash = new URLSearchParams(hash.replace(/^#/, '')).get(name);
+    if (fromHash !== null) return fromHash;
+    return new URLSearchParams(search).get(name);
+  }
+
+  function importLink(raw) {
+    var url;
+    try { url = new URL(String(raw).trim()); } catch (e) {
+      return Promise.reject(new Error('That does not look like a link'));
+    }
+
+    var payload = fieldFrom(url.search, url.hash, 'record');
+    var collection = fieldFrom(url.search, url.hash, 'collection') ||
+                     fieldFrom(url.search, url.hash, 'type') || '';
+    var text = fieldFrom(url.search, url.hash, 'text') || '';
+    var rkey = fieldFrom(url.search, url.hash, 'rkey') || '';
+    // at.new passes the target space as ?space=.
+    var space = fieldFrom(url.search, url.hash, 'space') || '';
+
+    // at.new/app.bsky.feed.post: the NSID can ride as the path.
+    if (!collection) {
+      var seg = url.pathname.replace(/^\/+|\/+$/g, '');
+      if (NSID_RE.test(seg)) collection = seg;
+    }
+
+    return Promise.resolve(payload ? decodePayload(payload) : null).then(function (json) {
+      var record = json ? parseRecord(json) : null;
+      if (!record) {
+        if (!collection && !text) throw new Error('No record found in that link');
+        record = {};
+        if (text) record.text = text;
+        if (!record.createdAt) record.createdAt = '{{$now}}';
+      }
+      if (typeof record.$type === 'string' && NSID_RE.test(record.$type)) {
+        collection = record.$type;
+      } else if (collection) {
+        record.$type = collection;
+      }
+      var imported = {
+        label: (collection ? collection.split('.').pop() : 'Imported').slice(0, 24),
+        // An imported button belongs to an account like any other, or its
+        // "Post as" picker has nothing selected and a space cannot be offered.
+        accountId: state.accounts.length ? state.accounts[0].id : '',
+        collection: collection,
+        rkey: rkey,
+        record: JSON.stringify(record, null, 2),
+        options: []
+      };
+      // Only a space URI, never a space-RECORD URI: ?space= names the space to
+      // write into, matching what the composer accepts.
+      if (/^at:\/\/[^/]+\/space\/[^/]+\/[^/]+$/.test(space.trim())) {
+        imported.space = space.trim();
+      }
+      return imported;
+    });
+  }
+
+  function shareLink(button) {
+    var record = parseRecord(button.record) || {};
+    var link = 'https://at.new/#record=' + encodeURIComponent(JSON.stringify(record));
+    if (button.space) {
+      link += '&space=' + encodeURIComponent(button.space);
+    }
+    return link;
+  }
+
+  // status lines -----------------------------------------------------------
+
+  function setStatus(element, kind, message) {
+    if (!kind) { element.hidden = true; return; }
+    element.hidden = false;
+    element.className = 'status ' + kind;
+    element.innerHTML = (SVG[kind] || '') + '<span></span>';
+    element.lastChild.textContent = message;
+  }
+
+  // account check ----------------------------------------------------------
+
+  function xhrJson(method, url, body, token) {
+    return new Promise(function (resolve, reject) {
+      if (!/^https:\/\//i.test(url)) {
+        reject(new Error('Needs an https address'));
+        return;
+      }
+      var xhr = new XMLHttpRequest();
+      xhr.open(method, url, true);
+      xhr.timeout = 20000;
+      if (body) xhr.setRequestHeader('Content-Type', 'application/json');
+      if (token) xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+      xhr.onload = function () {
+        var parsed = null;
+        try { parsed = JSON.parse(xhr.responseText); } catch (e) { parsed = null; }
+        resolve({ status: xhr.status, body: parsed, text: xhr.responseText });
+      };
+      xhr.onerror = function () { reject(new Error('Network error')); };
+      xhr.ontimeout = function () { reject(new Error('Timed out')); };
+      xhr.send(body ? JSON.stringify(body) : undefined);
+    });
+  }
+
+  // Identity resolution. Slingshot answers in one call; if it is down or does
+  // not know the account, the code falls back to the handle and DID directly.
+  // Default services. state.infra overrides any of them, and an empty field
+  // uses the default.
+  var DEFAULT_INFRA = {
+    resolver: 'https://slingshot.firehose.stream',
+    plcDirectory: 'https://didplc.directory',
+    doh: 'https://cloudflare-dns.com/dns-query'
+  };
+
+  function infraUrl(key) {
+    var chosen = state.infra && typeof state.infra[key] === 'string' ? state.infra[key].trim() : '';
+    return (chosen || DEFAULT_INFRA[key]).replace(/\/+$/, '');
+  }
+
+  function pdsFromDidDocument(doc) {
+    var services = (doc && doc.service) || [];
+    for (var i = 0; i < services.length; i++) {
+      var service = services[i];
+      if (!service || !service.serviceEndpoint) continue;
+      var id = String(service.id || '');
+      if (id.slice(-12) === '#atproto_pds' || service.type === 'AtprotoPersonalDataServer') {
+        return String(service.serviceEndpoint).replace(/\/+$/, '');
+      }
+    }
+    return null;
+  }
+
+  /** Resolve any DID method we can reach without a third party. */
+  function resolveDid(did) {
+    var url;
+    if (did.indexOf('did:plc:') === 0) {
+      url = infraUrl('plcDirectory') + '/' + encodeURIComponent(did);
+    } else if (did.indexOf('did:web:') === 0) {
+      // did:web encodes a port as %3A and path segments as colons.
+      var host = did.slice(8).replace(/%3A/gi, ':').split(':').join('/');
+      url = 'https://' + host + '/.well-known/did.json';
+    } else {
+      return Promise.reject(new Error('Unsupported DID method: ' + did.split(':')[1]));
+    }
+    return xhrJson('GET', url).catch(function () {
+      // This page has no origin, so a did:web host without CORS headers cannot
+      // be read from here. The PDS field is the workaround.
+      throw new Error('Could not read that DID document from here. Enter your PDS URL below.');
+    }).then(function (res) {
+      if (res.status !== 200 || !res.body) {
+        throw new Error('Could not read that DID document. Enter your PDS URL below.');
+      }
+      var pds = pdsFromDidDocument(res.body);
+      if (!pds) throw new Error('That DID document names no PDS');
+      var aka = res.body.alsoKnownAs && res.body.alsoKnownAs[0];
+      return {
+        did: did,
+        pds: pds,
+        handle: aka && String(aka).indexOf('at://') === 0 ? String(aka).slice(5) : null
+      };
+    });
+  }
+
+  function resolvePds(identifier, override) {
+    var value = String(identifier || '').trim().replace(/^@/, '');
+    if (override) {
+      return Promise.resolve({ pds: override.replace(/\/+$/, ''), did: '', handle: value });
+    }
+    if (!value) return Promise.reject(new Error('Enter a handle'));
+
+    // A DID resolves directly. did:web in particular never needs a resolver.
+    if (value.indexOf('did:') === 0) return resolveDid(value);
+
+    return xhrJson('GET', infraUrl('resolver') +
+      '/xrpc/blue.microcosm.identity.resolveMiniDoc?identifier=' + encodeURIComponent(value))
+      .then(function (res) {
+        if (res.status === 200 && res.body && res.body.did && res.body.pds) {
+          return {
+            pds: String(res.body.pds).replace(/\/+$/, ''),
+            did: res.body.did,
+            handle: res.body.handle && res.body.handle !== 'handle.invalid' ? res.body.handle : value
+          };
+        }
+        throw new Error('resolver miss');
+      })
+      .catch(function () {
+        // Fallback: ask the handle's own domain for its DID.
+        return xhrJson('GET', 'https://' + encodeURIComponent(value) + '/.well-known/atproto-did')
+          .then(function (res) {
+            var did = String((res && res.text) || '').trim();
+            if (res.status !== 200 || did.indexOf('did:') !== 0) {
+              throw new Error('Could not resolve that handle');
+            }
+            return resolveDid(did).then(function (identity) {
+              return { pds: identity.pds, did: identity.did, handle: value };
+            });
+          });
+      });
+  }
+
+  function checkAccount(account, element) {
+    var identifier = String(account.identifier || '').trim().replace(/^@/, '');
+    var password = String(account.password || '').trim();
+    if (!identifier) { setStatus(element, 'bad', 'Enter your handle first'); return; }
+    if (!password) { setStatus(element, 'bad', 'Enter an app password first'); return; }
+
+    setStatus(element, 'busy', 'Checking\u2026');
+    resolvePds(identifier, String(account.service || '').trim())
+      .then(function (identity) {
+        return xhrJson('POST', identity.pds + '/xrpc/com.atproto.server.createSession', {
+          identifier: identifier, password: password
+        }).then(function (res) {
+          if (res.status >= 200 && res.status < 300 && res.body && res.body.did) {
+            // Remember what the PDS said, so the watch can label the account
+            // even before the first post.
+            account.did = res.body.did;
+            account.handle = res.body.handle || identifier;
+            setStatus(element, 'ok', account.handle + ' on ' + identity.pds);
+            return;
+          }
+          var code = res.body && res.body.error ? res.body.error : '';
+          if (code === 'AuthenticationRequired' || code === 'InvalidLogin') {
+            throw new Error('Wrong handle or app password');
+          }
+          throw new Error((res.body && res.body.message) || ('Sign-in failed (' + res.status + ')'));
+        });
+      })
+      .catch(function (error) { setStatus(element, 'bad', error.message); });
+  }
+
+  // spaces capability ------------------------------------------------------
+
+  /**
+   * Does this host serve com.atproto.space.*?
+   *
+   * Calls listRepos with no credentials, as gustbin does. A spaces host answers
+   * 400 InvalidRequest naming the method. 401 AuthMissing proves nothing either
+   * way; only signing in gives a final answer.
+   */
+  function checkSpacesSupport(host) {
+    var origin;
+    try {
+      origin = new URL(host).origin;
+    } catch (e) {
+      return Promise.resolve('unknown');
+    }
+    return xhrJson('GET', origin + '/xrpc/com.atproto.space.listRepos')
+      .then(function (res) {
+        var body = res.body || {};
+        if (res.status === 400 && body.error === 'InvalidRequest' &&
+            typeof body.message === 'string' &&
+            body.message.indexOf('com.atproto.space.listRepos') !== -1) {
+          return 'supported';
+        }
+        // 404: the method does not exist here.
+        if (res.status === 404) {
+          return 'unsupported';
+        }
+        // 401 AuthMissing comes from both kinds of host.
+        if (res.status === 401) {
+          return 'unknown';
+        }
+        return 'unknown';
+      })
+      .catch(function () { return 'unknown'; });
+  }
+
+  /**
+   * Why this account cannot write into a space, or null if it can.
+   *
+   * Checks the two things known without a network call: the account uses the
+   * broker (space writes need OAuth) and is signed in. Whether its PDS serves
+   * spaces is checked separately, over the network.
+   */
+  function spaceBlocker(account, index) {
+    if (!account) {
+      return 'Add an account first';
+    }
+    if (account.auth !== 'broker') {
+      return 'Needs an account signed in through the broker.';
+    }
+    if (!account.deviceToken) {
+      return 'Sign ' + accountName(account, index || 0) + ' in through the broker first';
+    }
+    return null;
+  }
+
+  /** Disable a starter row and show the reason. */
+  function block(row, reason) {
+    row.disabled = true;
+    if (row.querySelector('.blocked')) {
+      row.querySelector('.blocked').textContent = reason;
+      return;
+    }
+    var note = document.createElement('span');
+    note.className = 'blocked';
+    note.textContent = reason;
+    row.firstChild.appendChild(note);
+  }
+
+  /** The first account that could write into a space, with its index. */
+  function firstSpaceAccount() {
+    for (var i = 0; i < state.accounts.length; i++) {
+      if (!spaceBlocker(state.accounts[i], i)) {
+        return { account: state.accounts[i], index: i };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Ask every ready account's PDS whether it serves spaces. Resolves to null
+   * if one does, or if any could not be reached, so a failed check never
+   * blocks a working account.
+   */
+  function probeSpaceAccounts() {
+    var ready = state.accounts.filter(function (a, i) { return !spaceBlocker(a, i); });
+    var hosts = ready.map(function (a) { return a.pds; }).filter(Boolean);
+    if (!ready.length || !hosts.length) {
+      return Promise.resolve(null);
+    }
+    return Promise.all(hosts.map(checkSpacesSupport)).then(function (results) {
+      if (results.indexOf('supported') !== -1) return null;
+      if (results.indexOf('unknown') !== -1) return null;
+      return 'Your account is on ' + hosts[0] + ', which does not serve spaces yet.';
+    });
+  }
+
+  /** The authority host a space URI points at. */
+  function spaceAuthorityHost(spaceUri) {
+    var match = /^at:\/\/([^/]+)\/space\//.exec(String(spaceUri || '').trim());
+    if (!match) {
+      return Promise.resolve(null);
+    }
+    // Same resolution as an account: a did:web authority needs no resolver.
+    return resolvePds(match[1], '')
+      .then(function (identity) { return identity.pds || null; })
+      .catch(function () { return null; });
+  }
+
+  // accounts ---------------------------------------------------------------
+
+  function accountBody(account, index) {
+    var body = document.createElement('div');
+    body.className = 'body';
+
+    function textField(key, labelText, hintText, placeholder, type) {
+      var input = document.createElement('input');
+      input.type = type || 'text';
+      input.value = account[key] || '';
+      input.autocapitalize = 'none';
+      input.autocorrect = 'off';
+      input.spellcheck = false;
+      if (placeholder) input.placeholder = placeholder;
+      input.addEventListener('input', function () {
+        account[key] = input.value;
+        var head = body.parentNode.querySelector('.btn-head span');
+        if (head) head.textContent = accountName(account, index);
+      });
+      body.appendChild(field(labelText, hintText, input));
+      return input;
+    }
+
+    textField('label', 'Name', 'Shown on the watch under each button.', 'personal');
+
+    var kind = document.createElement('select');
+    [['app-password', 'App password'], ['broker', 'OAuth via a broker']].forEach(function (pair) {
+      var option = document.createElement('option');
+      option.value = pair[0];
+      option.textContent = pair[1];
+      if (account.auth === pair[0]) option.selected = true;
+      kind.appendChild(option);
+    });
+    kind.addEventListener('change', function () {
+      account.auth = kind.value;
+      if (account.auth === 'broker' && !account.brokerUrl) {
+        account.brokerUrl = DEFAULT_BROKER_URL;
+      }
+      render();
+    });
+    body.appendChild(field('Sign in with',
+      account.auth === 'broker'
+        ? 'Supports public records and private spaces (alpha).'
+        : 'Simplest to set up. Does not support spaces (alpha).',
+      kind));
+
+    var status = document.createElement('div');
+    status.className = 'status';
+    status.hidden = true;
+
+    var actions = document.createElement('div');
+    actions.className = 'row';
+    actions.style.marginTop = '4px';
+
+    // Set for a signed-in broker account, and shown next to Delete.
+    var brokerSignOut = null;
+
+    if (account.auth === 'broker') {
+      var brokerAddress = account.brokerUrl || DEFAULT_BROKER_URL;
+      var signedIn = !!account.deviceToken;
+
+      if (signedIn) {
+        var who = document.createElement('div');
+        setStatus(who, 'ok', 'Signed in as ' + (account.handle || account.did || 'unknown')
+                  + ' via ' + brokerAddress.replace(/^https?:\/\//, ''));
+        body.appendChild(who);
+      }
+
+      // Shown as text to type: this webview blocks window.open() and may block
+      // the clipboard.
+      function buildSignIn(into, collapseBrokerField) {
+        var stepOne = document.createElement('div');
+        stepOne.className = 'step';
+        stepOne.innerHTML =
+          '<span class="step-n">1</span>' +
+          '<div><b>Open this address in a browser</b>' +
+          '<div class="hint">Sign in there and you get a code.</div></div>';
+
+        // The scheme is dropped because this address gets typed by hand.
+        var urlRow = document.createElement('div');
+        urlRow.className = 'url-row';
+        var urlText = document.createElement('code');
+        urlText.className = 'url';
+        urlText.textContent = brokerAddress.replace(/^https?:\/\//, '');
+        urlRow.appendChild(urlText);
+
+        var stepTwo = document.createElement('div');
+        stepTwo.className = 'step';
+        stepTwo.innerHTML =
+          '<span class="step-n">2</span>' +
+          '<div><b>Enter the code here</b></div>';
+
+        var codeInput = document.createElement('input');
+        codeInput.type = 'text';
+        codeInput.placeholder = 'ABCD-EFGH';
+        codeInput.autocapitalize = 'characters';
+        codeInput.autocorrect = 'off';
+        codeInput.spellcheck = false;
+
+        var pair = document.createElement('button');
+        pair.type = 'button';
+        pair.className = 'primary';
+        pair.textContent = signedIn ? 'Sign in again' : 'Sign in';
+        pair.addEventListener('click', function () {
+          pairAccount(account, brokerAddress, codeInput.value, status,
+                      function () { render(); });
+        });
+
+        var codeRow = document.createElement('div');
+        codeRow.className = 'url-row';
+        codeRow.appendChild(codeInput);
+        codeRow.appendChild(pair);
+
+        into.appendChild(stepOne);
+        into.appendChild(urlRow);
+        into.appendChild(stepTwo);
+        into.appendChild(codeRow);
+        // When signed in these steps sit inside a closed details, so the
+        // status goes at the foot of the card instead.
+        if (!signedIn) into.appendChild(status);
+
+        var urlInput = document.createElement('input');
+        urlInput.type = 'text';
+        urlInput.value = account.brokerUrl || '';
+        urlInput.autocapitalize = 'none';
+        urlInput.spellcheck = false;
+        urlInput.placeholder = DEFAULT_BROKER_URL;
+        // Used for the next sign-in only. The token stays with the broker it
+        // came from until a code from the new one works.
+        urlInput.addEventListener('input', function () {
+          brokerAddress = urlInput.value.trim() || DEFAULT_BROKER_URL;
+          urlText.textContent = brokerAddress.replace(/^https?:\/\//, '');
+        });
+
+        if (collapseBrokerField) {
+          var advanced = document.createElement('details');
+          advanced.style.marginTop = '14px';
+          var summary = document.createElement('summary');
+          summary.textContent = 'Use a different broker';
+          summary.className = 'hint';
+          advanced.appendChild(summary);
+          urlInput.style.marginTop = '8px';
+          advanced.appendChild(urlInput);
+          into.appendChild(advanced);
+        } else {
+          into.appendChild(field('Broker address', null, urlInput));
+        }
+      }
+
+      if (signedIn) {
+        var again = document.createElement('details');
+        again.style.marginTop = '10px';
+        var againSummary = document.createElement('summary');
+        againSummary.textContent = 'Sign in again, or use a different broker';
+        againSummary.className = 'hint';
+        again.appendChild(againSummary);
+        buildSignIn(again, false);
+        body.appendChild(again);
+
+        // Two taps, because it revokes the broker's access at your provider.
+        // Not styled as a danger: signing in again restores it.
+        brokerSignOut = document.createElement('button');
+        brokerSignOut.type = 'button';
+        brokerSignOut.textContent = 'Sign out of broker';
+        var armedForget = false;
+        var disarmForget = null;
+        brokerSignOut.addEventListener('click', function () {
+          if (!armedForget) {
+            armedForget = true;
+            brokerSignOut.textContent = 'Tap again to sign out';
+            disarmForget = setTimeout(function () {
+              armedForget = false;
+              brokerSignOut.textContent = 'Sign out of broker';
+            }, 4000);
+            return;
+          }
+          if (disarmForget) clearTimeout(disarmForget);
+          setStatus(status, 'busy', 'Signing out…');
+          xhrJson('POST', String(account.brokerUrl || '').replace(/\/+$/, '') + '/api/forget',
+                  {}, account.deviceToken)
+            .then(function (res) {
+              if (res.status >= 200 && res.status < 300) {
+                account.deviceToken = '';
+                account.did = '';
+                account.handle = '';
+                var detail = res.body && res.body.revoked
+                  ? 'Signed out, and the broker’s access revoked at your provider.'
+                  : 'Signed out here. Could not revoke at your provider, so remove it in ' +
+                    'your account settings there.';
+                render();
+                setStatus($('page-status'), 'ok', detail);
+                return;
+              }
+              throw new Error((res.body && res.body.message) || 'Could not sign out');
+            })
+            .catch(function (error) { setStatus(status, 'bad', error.message); });
+        });
+      } else {
+        buildSignIn(body, true);
+      }
+    } else {
+      textField('identifier', 'Handle or DID', null, 'alice.bsky.social');
+      textField('password', 'App password',
+        'In Bluesky, go to Settings > Privacy and security > App passwords. If you run your own PDS, create one there.',
+        'xxxx-xxxx-xxxx-xxxx', 'password');
+      textField('service', 'PDS URL',
+        'Only needed if your handle does not resolve publicly yet.', 'Resolved from your handle');
+
+      var check = document.createElement('button');
+      check.type = 'button';
+      check.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M10.6 10.6 14 14"/></svg> Check account';
+      check.addEventListener('click', function () { checkAccount(account, status); });
+      actions.appendChild(check);
+    }
+
+    var spacer = document.createElement('span');
+    spacer.className = 'spacer';
+
+    var remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'danger';
+    remove.innerHTML = SVG.trash + ' Delete';
+    // Tap twice to delete: this webview cannot show confirm().
+    var armed = false;
+    var disarm = null;
+    remove.addEventListener('click', function () {
+      var used = state.buttons.filter(function (b) { return b.accountId === account.id; }).length;
+      if (!armed) {
+        armed = true;
+        remove.innerHTML = SVG.trash + (used
+          ? ' Delete anyway? (' + used + ' button' + (used === 1 ? '' : 's') + ')'
+          : ' Tap again to delete');
+        disarm = setTimeout(function () {
+          armed = false;
+          remove.innerHTML = SVG.trash + ' Delete';
+        }, 4000);
+        return;
+      }
+      if (disarm) clearTimeout(disarm);
+      state.accounts.splice(index, 1);
+      state.openAccount = -1;
+      render();
+    });
+
+    actions.appendChild(spacer);
+    if (brokerSignOut) actions.appendChild(brokerSignOut);
+    actions.appendChild(remove);
+    body.appendChild(actions);
+    if (!status.parentNode) body.appendChild(status);
+    return body;
+  }
+
+  /** Exchange a sign-in code for a device token the watch can post with. */
+  function pairAccount(account, brokerUrl, rawCode, status, done) {
+    var base = String(brokerUrl || '').trim().replace(/\/+$/, '');
+    if (base && !/^[a-z]+:\/\//i.test(base)) base = 'https://' + base;
+    var code = String(rawCode || '').trim().toUpperCase();
+    if (!base) { setStatus(status, 'bad', 'Enter the broker URL first'); return; }
+    if (!code) { setStatus(status, 'bad', 'Enter the sign-in code'); return; }
+
+    setStatus(status, 'busy', 'Signing in\u2026');
+    xhrJson('POST', base + '/api/pair', { code: code, label: 'Pebble' })
+      .then(function (res) {
+        if (res.status >= 200 && res.status < 300 && res.body && res.body.token) {
+          account.brokerUrl = base;
+          account.deviceToken = res.body.token;
+          account.did = res.body.did || '';
+          account.handle = res.body.handle || '';
+          // Kept so space writes can be checked against the right host.
+          account.pds = res.body.pds || '';
+          setStatus(status, 'ok', 'Signed in as ' + (account.handle || account.did));
+          if (done) done();
+          return;
+        }
+        var detail = res.body || {};
+        throw new Error(detail.message || detail.error || ('Sign-in failed (' + res.status + ')'));
+      })
+      .catch(function (error) { setStatus(status, 'bad', error.message); });
+  }
+
+  function renderAccounts() {
+    var host = $('accounts');
+    host.textContent = '';
+
+    if (!state.accounts.length) {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Start here. Add the account you want to post from.';
+      host.appendChild(empty);
+      return;
+    }
+
+    state.accounts.forEach(function (account, index) {
+      var card = document.createElement('div');
+      card.className = 'card';
+
+      var head = document.createElement('button');
+      head.type = 'button';
+      head.className = 'btn-head';
+      head.setAttribute('aria-expanded', state.openAccount === index ? 'true' : 'false');
+      head.innerHTML = SVG.chev + '<span>' + escapeHtml(accountName(account, index)) +
+                       '</span><span class="spacer"></span><span class="meta">' +
+                       escapeHtml(account.handle || account.identifier ||
+                         (account.auth === 'broker' ? 'not signed in' : 'no handle')) + '</span>';
+      head.addEventListener('click', function () {
+        state.openAccount = state.openAccount === index ? -1 : index;
+        render();
+      });
+      card.appendChild(head);
+
+      if (state.openAccount === index) {
+        card.appendChild(accountBody(account, index));
+      }
+      host.appendChild(card);
+    });
+  }
+
+  // buttons ----------------------------------------------------------------
+
+
+  /**
+   * Starter buttons: working examples, all editable.
+   *
+   * Choice labels are words because the watch font has no emoji. Each
+   * option's `values` holds what gets posted.
+   */
+  var STARTERS = [
+    {
+      name: 'Write your own',
+      hint: 'Write the full record yourself, for any lexicon.',
+      build: function () {
+        return {
+          label: 'New button',
+          collection: '',
+          record: JSON.stringify({ $type: '', createdAt: '{{$now}}' }, null, 2),
+          options: []
+        };
+      }
+    },
+    {
+      name: 'Bluesky post',
+      hint: 'Posts the same message every time you press.',
+      build: function () {
+        return {
+          label: 'Heads down',
+          collection: 'app.bsky.feed.post',
+          record: JSON.stringify({
+            $type: 'app.bsky.feed.post',
+            text: 'Heads down for an hour',
+            createdAt: '{{$now}}',
+            langs: ['{{$lang}}']
+          }, null, 2),
+          options: []
+        };
+      }
+    },
+    {
+      name: 'Voice post',
+      hint: 'Say your post out loud, then confirm it. Needs a watch with a microphone.',
+      build: function () {
+        return {
+          label: 'Voice post',
+          collection: 'app.bsky.feed.post',
+          record: JSON.stringify({
+            $type: 'app.bsky.feed.post',
+            text: '{{$voice}}',
+            createdAt: '{{$now}}',
+            langs: ['{{$lang}}']
+          }, null, 2),
+          options: []
+        };
+      }
+    },
+    {
+      name: 'Statusphere status',
+      hint: 'Choose an emoji status from a list on the watch.',
+      build: function () {
+        return {
+          label: 'Status',
+          collection: 'xyz.statusphere.status',
+          record: JSON.stringify({
+            $type: 'xyz.statusphere.status',
+            status: '{{status}}',
+            createdAt: '{{$now}}'
+          }, null, 2),
+          options: [
+            { label: 'Thumbs up', values: { status: '\ud83d\udc4d' } },
+            { label: 'Heart', values: { status: '\ud83d\udc99' } },
+            { label: 'Celebrate', values: { status: '\ud83c\udf89' } },
+            { label: 'Coffee', values: { status: '\u2615' } },
+            { label: 'Focused', values: { status: '\ud83e\udd13' } },
+            { label: 'Salute', values: { status: '\ud83e\udee1' } },
+            { label: 'Cool', values: { status: '\ud83d\ude0e' } },
+            { label: 'Dead', values: { status: '\ud83d\udc80' } }
+          ]
+        };
+      }
+    },
+    {
+      name: 'Post with choices',
+      hint: 'Choose from a short list of messages on the watch.',
+      build: function () {
+        return {
+          label: 'Status',
+          collection: 'app.bsky.feed.post',
+          record: JSON.stringify({
+            $type: 'app.bsky.feed.post',
+            text: '{{message}}',
+            createdAt: '{{$now}}',
+            langs: ['{{$lang}}']
+          }, null, 2),
+          options: [
+            { label: 'On my way' },
+            { label: 'Running late' },
+            { label: 'Heads down' },
+            { label: 'Done for today' }
+          ]
+        };
+      }
+    },
+    {
+      name: 'Private voice note',
+      hint: 'Saves voice notes to a private space (alpha). Add your space after creating it. Only members of the space can read them.',
+      needsSpaces: true,
+      build: function () {
+        return {
+          label: 'Voice note',
+          collection: 'pebble.voice.note',
+          space: '',
+          // Private only because of the space. Without one this would post
+          // publicly, so it cannot be saved or posted until it has one.
+          spaceRequired: true,
+          record: JSON.stringify({
+            $type: 'pebble.voice.note',
+            text: '{{$voice}}',
+            createdAt: '{{$now}}'
+          }, null, 2),
+          options: []
+        };
+      }
+    }
+  ];
+
+  /** Scroll a card's header to the top of the view. */
+  function reveal(listId, index) {
+    var head = document.querySelectorAll('#' + listId + ' .btn-head')[index];
+    if (!head) return;
+    var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    head.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+  }
+
+  function blankButton() {
+    return {
+      label: 'New button',
+      accountId: state.accounts.length ? state.accounts[0].id : '',
+      collection: 'app.bsky.feed.post',
+      rkey: '',
+      record: JSON.stringify({
+        $type: 'app.bsky.feed.post',
+        text: 'Posted from my Pebble',
+        createdAt: '{{$now}}',
+        langs: ['{{$lang}}']
+      }, null, 2),
+      options: [],
+      validate: 'auto'
+    };
+  }
+
+  /**
+   * One choice. The label is shown on the watch and the value is posted. They
+   * differ for emoji, which the watch font cannot draw.
+   *
+   * @param varName the single fill-in this button has, or null when it has
+   *                several and each choice needs a `k=v; k=v` line.
+   */
+  function optionRow(button, index, optionIndex, onChange, varName) {
+    var option = button.options[optionIndex] || {};
+    var wrap = document.createElement('div');
+    wrap.className = 'opt';
+
+    var label = document.createElement('input');
+    label.type = 'text';
+    label.value = option.label || '';
+    label.placeholder = 'Shown on the watch';
+    label.addEventListener('input', function () {
+      button.options[optionIndex].label = label.value;
+      onChange(false);
+    });
+
+    var remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'danger';
+    remove.innerHTML = SVG.trash;
+    remove.setAttribute('aria-label', 'Remove choice');
+    remove.addEventListener('click', function () {
+      button.options.splice(optionIndex, 1);
+      onChange(true);
+    });
+
+    wrap.appendChild(label);
+    wrap.appendChild(remove);
+
+    var values = document.createElement('input');
+    values.type = 'text';
+    if (varName) {
+      values.value = option.values && option.values[varName] !== undefined
+        ? String(option.values[varName]) : '';
+      values.placeholder = 'Posts the label as it is';
+      values.addEventListener('input', function () {
+        var text = values.value;
+        if (text) {
+          var map = {};
+          map[varName] = text;
+          button.options[optionIndex].values = map;
+        } else {
+          delete button.options[optionIndex].values;
+        }
+        onChange(false);
+      });
+    } else {
+      values.value = option.values ? Object.keys(option.values).map(function (k) {
+        return k + '=' + option.values[k];
+      }).join('; ') : '';
+      values.placeholder = 'mood=happy; note=at the park';
+      values.addEventListener('input', function () {
+        var map = {};
+        values.value.split(';').forEach(function (pair) {
+          var at = pair.indexOf('=');
+          if (at === -1) return;
+          var key = pair.slice(0, at).trim();
+          if (key) map[key] = pair.slice(at + 1).trim();
+        });
+        if (Object.keys(map).length) button.options[optionIndex].values = map;
+        else delete button.options[optionIndex].values;
+        onChange(false);
+      });
+    }
+
+    var container = document.createElement('div');
+    container.appendChild(wrap);
+    container.appendChild(values);
+    values.style.marginBottom = '12px';
+    return { node: container, valuesInput: values };
+  }
+
+  /** Short age of an entry: "4m", "2h", "3d". */
+  function ago(iso) {
+    var then = Date.parse(iso);
+    if (isNaN(then)) return '';
+    var seconds = Math.max(0, Math.round((Date.now() - then) / 1000));
+    if (seconds < 60) return seconds + 's';
+    if (seconds < 3600) return Math.round(seconds / 60) + 'm';
+    if (seconds < 86400) return Math.round(seconds / 3600) + 'h';
+    return Math.round(seconds / 86400) + 'd';
+  }
+
+  function renderJournal() {
+    var host = $('journal');
+    host.textContent = '';
+
+    if (!state.journal.length) {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Nothing yet. Press a button on your watch and it will show up here.';
+      host.appendChild(empty);
+      return;
+    }
+
+    var log = document.createElement('div');
+    log.className = 'log';
+    state.journal.forEach(function (entry) {
+      var row = document.createElement('div');
+      row.className = 'log-row ' + (entry.kind === 'ok' || entry.kind === 'bad' ? entry.kind : '');
+
+      var when = document.createElement('span');
+      when.className = 'log-when';
+      when.textContent = ago(entry.t);
+      when.title = entry.t;
+
+      var what = document.createElement('span');
+      what.className = 'log-what';
+      what.textContent = entry.message;
+
+      row.appendChild(when);
+      row.appendChild(what);
+      log.appendChild(row);
+    });
+    host.appendChild(log);
+  }
+
+  var INFRA_FIELDS = [
+    ['resolver', 'Identity resolver',
+     'Turns a handle into a DID and a PDS in one call. Any host speaking blue.microcosm.identity.resolveMiniDoc.'],
+    ['plcDirectory', 'PLC directory',
+     'Where did:plc documents are read from. A mirror works too.'],
+    ['doh', 'DNS-over-HTTPS',
+     'Used only when a handle publishes a _atproto TXT record instead of a .well-known file.']
+  ];
+
+  function renderInfra() {
+    var host = $('infra-fields');
+    host.textContent = '';
+    INFRA_FIELDS.forEach(function (spec) {
+      var key = spec[0];
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.value = state.infra[key] || '';
+      input.placeholder = DEFAULT_INFRA[key];
+      input.autocapitalize = 'none';
+      input.spellcheck = false;
+      input.addEventListener('input', function () { state.infra[key] = input.value.trim(); });
+      host.appendChild(field(spec[1], spec[2], input));
+    });
+  }
+
+  function render() {
+    // Any change makes the last Save message out of date.
+    setStatus($('page-status'), null);
+    renderAccounts();
+    renderJournal();
+    renderInfra();
+
+    // Buttons need an account and the log needs a post, so hide both until then.
+    // With an account listed, "Add account" would read as saving that card.
+    $('save-note').hidden = state.accounts.length === 0;
+    $('add-account-label').textContent =
+      state.accounts.length ? 'Add another account' : 'Add account';
+
+    $('buttons-section').hidden = state.accounts.length === 0;
+    $('journal-section').hidden = state.journal.length === 0;
+    // Counts in the summary show what is inside while it is collapsed.
+    var failures = state.journal.filter(function (e) { return e.kind === 'bad'; }).length;
+    $('journal-count').textContent = state.journal.length
+      + (state.journal.length === 1 ? ' entry' : ' entries')
+      + (failures ? ', ' + failures + ' failed' : '');
+
+    var host = $('buttons');
+    host.textContent = '';
+
+    if (!state.buttons.length) {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No buttons yet. Add one, or import a draft from at.new.';
+      host.appendChild(empty);
+      return;
+    }
+
+    state.buttons.forEach(function (button, index) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.index = String(index);
+
+      var row = document.createElement('div');
+      row.className = 'row';
+      row.style.gap = '6px';
+      row.style.flexWrap = 'nowrap';
+
+      // A real button, so reordering also works with the arrow keys.
+      var grip = document.createElement('button');
+      grip.type = 'button';
+      grip.className = 'grip';
+      grip.innerHTML = SVG.grip;
+      grip.title = 'Drag to reorder';
+      grip.setAttribute('aria-label',
+        'Reorder ' + (button.label || 'button') + '. Drag, or use the arrow keys.');
+      if (state.buttons.length > 1) {
+        grip.addEventListener('pointerdown', function (event) { beginDrag(event, card, index); });
+        grip.addEventListener('keydown', function (event) {
+          var delta = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+          if (!delta) return;
+          event.preventDefault();
+          move(index, delta);
+          var moved = host.querySelector('[data-index="' + (index + delta) + '"] .grip');
+          if (moved) moved.focus();
+        });
+      } else {
+        grip.disabled = true;
+        grip.style.visibility = 'hidden';
+      }
+
+      var head = document.createElement('button');
+      head.type = 'button';
+      head.className = 'btn-head';
+      head.setAttribute('aria-expanded', state.open === index ? 'true' : 'false');
+      var meta = button.collection || 'no collection';
+      if (state.accounts.length > 1) {
+        // Show which account it posts as.
+        state.accounts.forEach(function (a, ai) {
+          if (a.id === button.accountId) meta += ' · ' + accountName(a, ai);
+        });
+      }
+      head.innerHTML = SVG.chev + '<span>' + escapeHtml(button.label || 'Untitled') +
+                       '</span><span class="spacer"></span><span class="meta">' + escapeHtml(meta) + '</span>';
+      head.addEventListener('click', function () {
+        state.open = state.open === index ? -1 : index;
+        render();
+      });
+
+      row.appendChild(grip);
+      row.appendChild(head);
+      card.appendChild(row);
+
+      if (state.open === index) {
+        card.appendChild(buttonBody(button, index));
+      }
+      host.appendChild(card);
+    });
+  }
+
+  /**
+   * Drag a card to a new place in the list.
+   *
+   * Uses pointer events because HTML5 drag and drop does not work on iOS touch
+   * screens. Nothing re-renders mid-drag, since that would end the gesture: the
+   * card follows the pointer, its neighbours shift by one card height, and the
+   * array is updated on release.
+   */
+  function beginDrag(event, card, from) {
+    if (event.button !== undefined && event.button !== 0) return;
+    event.preventDefault();
+
+    var host = $('buttons');
+    // Collapse first so every card has the same height.
+    if (state.open !== -1) {
+      state.open = -1;
+      render();
+      card = host.querySelector('[data-index="' + from + '"]');
+      if (!card) return;
+    }
+
+    var cards = Array.prototype.slice.call(host.querySelectorAll('.card'));
+    var startY = event.clientY;
+    var height = card.getBoundingClientRect().height;
+    var gap = cards.length > 1
+      ? Math.max(0, cards[1].getBoundingClientRect().top -
+                    cards[0].getBoundingClientRect().bottom)
+      : 0;
+    var step = height + gap;
+    var to = from;
+
+    card.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+
+    function place(y) {
+      var offset = y - startY;
+      card.style.transform = 'translateY(' + offset + 'px)';
+
+      // Where it would land: whole steps from where it started, clamped.
+      var wanted = from + Math.round(offset / step);
+      wanted = Math.max(0, Math.min(cards.length - 1, wanted));
+      if (wanted === to) return;
+      to = wanted;
+
+      cards.forEach(function (other, index) {
+        if (other === card) return;
+        var shift = 0;
+        if (from < to && index > from && index <= to) shift = -step;
+        else if (from > to && index >= to && index < from) shift = step;
+        other.classList.add('shifting');
+        other.style.transform = shift ? 'translateY(' + shift + 'px)' : '';
+      });
+    }
+
+    function onMove(moveEvent) { place(moveEvent.clientY); }
+
+    function onUp() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      document.body.style.userSelect = '';
+      cards.forEach(function (other) {
+        other.classList.remove('dragging', 'shifting');
+        other.style.transform = '';
+      });
+      if (to !== from) {
+        var moved = state.buttons.splice(from, 1)[0];
+        state.buttons.splice(to, 0, moved);
+      }
+      render();
+      var handle = host.querySelector('[data-index="' + to + '"] .grip');
+      if (handle) handle.focus();
+    }
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+  }
+
+  function escapeHtml(text) {
+    return String(text).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function field(labelText, hintText, input) {
+    var label = document.createElement('label');
+    var span = document.createElement('span');
+    span.className = 'lbl';
+    span.textContent = labelText;
+    label.appendChild(span);
+    label.appendChild(input);
+    if (hintText) {
+      var hint = document.createElement('span');
+      hint.className = 'hint';
+      hint.textContent = hintText;
+      label.appendChild(hint);
+    }
+    return label;
+  }
+
+  function buttonBody(button, index) {
+    var body = document.createElement('div');
+    body.className = 'body';
+
+    var label = document.createElement('input');
+    label.type = 'text';
+    label.value = button.label || '';
+    label.maxLength = MAX_LABEL_CHARS;
+    label.addEventListener('input', function () {
+      button.label = label.value;
+      var head = body.parentNode.querySelector('.btn-head span');
+      if (head) head.textContent = label.value || 'Untitled';
+    });
+    body.appendChild(field('Label', 'What the watch shows.', label));
+
+    if (state.accounts.length > 1) {
+      var picker = document.createElement('select');
+      state.accounts.forEach(function (account, i) {
+        var option = document.createElement('option');
+        option.value = account.id;
+        option.textContent = accountName(account, i);
+        if (account.id === button.accountId) option.selected = true;
+        picker.appendChild(option);
+      });
+      picker.addEventListener('change', function () {
+        button.accountId = picker.value;
+        render();
+      });
+      body.appendChild(field('Post as', 'Which account writes this record.', picker));
+    }
+
+    var collection = document.createElement('input');
+    collection.type = 'text';
+    collection.value = button.collection || '';
+    collection.autocapitalize = 'none';
+    collection.spellcheck = false;
+    collection.addEventListener('input', function () { button.collection = collection.value.trim(); refresh(); });
+    body.appendChild(field('Collection', 'The lexicon NSID this record is written to.', collection));
+
+    var record = document.createElement('textarea');
+    record.value = button.record || '';
+    record.spellcheck = false;
+    record.autocapitalize = 'none';
+    record.addEventListener('input', function () { button.record = record.value; refresh(); });
+    body.appendChild(field('Record', null, record));
+
+    var vars = document.createElement('div');
+    vars.className = 'hint';
+    body.appendChild(vars);
+
+    var optionsWrap = document.createElement('div');
+    optionsWrap.style.marginTop = '16px';
+    body.appendChild(optionsWrap);
+
+    var actions = document.createElement('div');
+    actions.className = 'row';
+    actions.style.marginTop = '16px';
+
+    // Where the link goes when the clipboard is refused. Never a prompt.
+    var linkOut = document.createElement('code');
+    linkOut.className = 'url';
+    linkOut.style.marginTop = '10px';
+    linkOut.style.display = 'block';
+    linkOut.hidden = true;
+
+    var share = document.createElement('button');
+    share.type = 'button';
+    share.className = 'ghost';
+    share.innerHTML = SVG.link + ' Copy this button as an at.new link';
+    share.addEventListener('click', function () {
+      // Copy the link: this webview ignores new-window requests.
+      var link = shareLink(button);
+      function mark(text) {
+        share.innerHTML = SVG.link + ' ' + text;
+        setTimeout(function () { share.innerHTML = SVG.link + ' Copy this button as an at.new link'; }, 1600);
+      }
+      function showInline() {
+        linkOut.hidden = false;
+        linkOut.textContent = link;
+        mark('Copy it below');
+        var range = document.createRange();
+        range.selectNodeContents(linkOut);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function () { mark('Copied'); }, showInline);
+      } else {
+        showInline();
+      }
+    });
+
+    var remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'danger';
+    remove.innerHTML = SVG.trash + ' Delete';
+    remove.addEventListener('click', function () {
+      state.buttons.splice(index, 1);
+      state.open = -1;
+      render();
+    });
+
+    var spacer = document.createElement('span');
+    spacer.className = 'spacer';
+    actions.appendChild(spacer);
+    actions.appendChild(remove);
+
+    // Rarely needed settings.
+    var advanced = document.createElement('details');
+    advanced.style.marginTop = '16px';
+    var summary = document.createElement('summary');
+    summary.className = 'hint';
+    summary.textContent = 'Advanced';
+    advanced.appendChild(summary);
+
+    // Space writes need OAuth, so only broker accounts get the field.
+    var poster = null;
+    state.accounts.forEach(function (a) { if (a.id === button.accountId) poster = a; });
+    if (button.spaceRequired) advanced.open = true;
+    if (poster && poster.auth === 'broker') {
+      var space = document.createElement('input');
+      space.type = 'text';
+      space.value = button.space || '';
+      space.autocapitalize = 'none';
+      space.spellcheck = false;
+      space.placeholder = 'at://authority/space/type/key';
+      space.addEventListener('input', function () { button.space = space.value.trim(); });
+      advanced.appendChild(field('Space',
+        'Post into a space instead of your public account. You normally get this from an at.new link.',
+        space));
+
+      var spaceStatus = document.createElement('div');
+      spaceStatus.className = 'status';
+      spaceStatus.hidden = true;
+      advanced.appendChild(spaceStatus);
+
+      var verify = document.createElement('button');
+      verify.type = 'button';
+      verify.textContent = 'Check space host';
+      verify.style.marginBottom = '14px';
+      verify.addEventListener('click', function () {
+        var uri = String(space.value || '').trim();
+        if (!uri) { setStatus(spaceStatus, 'bad', 'Enter a space URI first'); return; }
+        setStatus(spaceStatus, 'busy', 'Checking\u2026');
+        spaceAuthorityHost(uri).then(function (host) {
+          if (!host) {
+            setStatus(spaceStatus, 'bad', 'Could not find the server that hosts that space');
+            return;
+          }
+          return checkSpacesSupport(host).then(function (support) {
+            if (support === 'supported') {
+              setStatus(spaceStatus, 'ok', 'Spaces host: ' + host);
+            } else if (support === 'unsupported') {
+              setStatus(spaceStatus, 'bad', host + ' does not serve spaces');
+            } else {
+              setStatus(spaceStatus, 'bad', 'Could not tell whether ' + host + ' supports spaces');
+            }
+          });
+        });
+      });
+      advanced.appendChild(verify);
+    } else if (button.space) {
+      var stale = document.createElement('p');
+      stale.className = 'hint';
+      stale.textContent = 'This button posts into a space (' + button.space +
+        '). Sign this account in through the broker to use it.';
+      advanced.appendChild(stale);
+    }
+
+    advanced.appendChild(share);
+    advanced.appendChild(linkOut);
+    body.appendChild(advanced);
+    body.appendChild(actions);
+
+    function refresh() {
+      var parsed = parseRecord(button.record);
+      vars.textContent = '';
+      optionsWrap.textContent = '';
+
+      if (!parsed) {
+        var bad = document.createElement('span');
+        bad.className = 'pill bad';
+        bad.textContent = 'Record is not valid JSON';
+        vars.appendChild(bad);
+        return;
+      }
+
+      var found = listVariables(parsed);
+      var wantsVoice = found.builtins.indexOf(VOICE) !== -1;
+      found.builtins.forEach(function (name) {
+        vars.appendChild(pill(name, name === VOICE ? 'fill' : ''));
+      });
+      found.users.forEach(function (name) { vars.appendChild(pill(name, 'fill')); });
+      found.unknown.forEach(function (name) { vars.appendChild(pill(name + ' unknown', 'bad')); });
+
+      if (!found.builtins.length && !found.users.length && !found.unknown.length) {
+        var note = document.createElement('span');
+        note.textContent = 'This button posts the same thing every time you press it.';
+        vars.appendChild(note);
+      }
+
+      if (wantsVoice) {
+        var voiceNote = document.createElement('div');
+        voiceNote.className = 'hint';
+        voiceNote.textContent = found.users.length
+          ? 'A button can dictate or offer choices. Remove the other fill-ins.'
+          : 'Pressing this button opens dictation on the watch and posts what you say. Needs a watch with a microphone. The original Pebble does not have one.';
+        optionsWrap.appendChild(voiceNote);
+        return;
+      }
+
+      if (found.users.length) {
+        var heading = document.createElement('span');
+        heading.className = 'lbl';
+        heading.textContent = 'Choices for ' + found.users.map(function (n) { return '{{' + n + '}}'; }).join(', ');
+        optionsWrap.appendChild(heading);
+
+        button.options = Array.isArray(button.options) ? button.options : [];
+        button.options.forEach(function (option, optionIndex) {
+          if (typeof option === 'string') button.options[optionIndex] = { label: option };
+          var row = optionRow(button, index, optionIndex, function (rerender) {
+            if (rerender) refresh();
+          }, found.users.length === 1 ? found.users[0] : null);
+          optionsWrap.appendChild(row.node);
+        });
+
+        var add = document.createElement('button');
+        add.type = 'button';
+        add.textContent = 'Add choice';
+        add.disabled = button.options.length >= MAX_OPTIONS;
+        add.addEventListener('click', function () {
+          button.options.push({ label: '' });
+          refresh();
+        });
+        optionsWrap.appendChild(add);
+
+        var hint = document.createElement('div');
+        hint.className = 'hint';
+        hint.textContent = found.users.length > 1
+          ? 'With more than one fill-in, give each choice a values line like mood=happy; note=park.'
+          : 'Each choice is a row on the watch. The first box is the word the watch '
+            + 'shows you, the second is what gets posted into {{' + found.users[0]
+            + '}}. Leave the second empty to post the same word. Use both for '
+            + 'emoji, which the watch cannot draw.';
+        optionsWrap.appendChild(hint);
+      } else if (button.options && button.options.length) {
+        button.options = [];
+      }
+    }
+
+    function pill(text, kind) {
+      var span = document.createElement('span');
+      span.className = 'pill' + (kind ? ' ' + kind : '');
+      span.textContent = '{{' + text + '}}';
+      return span;
+    }
+
+    refresh();
+    return body;
+  }
+
+  function move(index, delta) {
+    var target = index + delta;
+    if (target < 0 || target >= state.buttons.length) return;
+    var moved = state.buttons.splice(index, 1)[0];
+    state.buttons.splice(target, 0, moved);
+    state.open = target;
+    render();
+  }
+
+  // save / close -----------------------------------------------------------
+
+  function returnTo() {
+    var params = new URLSearchParams(location.search);
+    var target = params.get('return_to');
+    if (!target) {
+      var match = location.href.match(/[?&]return_to=([^&#]+)/);
+      if (match) target = decodeURIComponent(match[1]);
+    }
+    return target || 'pebblejs://close#';
+  }
+
+  function close(payload) {
+    var target = returnTo();
+    location.href = target + encodeURIComponent(JSON.stringify(payload));
+  }
+
+  /**
+   * How many buttons fit in the one message the watch reads the list from.
+   *
+   * Mirrors buildMenuBlob's accounting: the phone stops adding rows once the
+   * blob would overflow, and rows past that point simply never appear.
+   */
+  function countButtonsThatFit(current) {
+    var used = 0;
+    var fits = 0;
+    for (var i = 0; i < current.buttons.length && i < MAX_ITEMS; i++) {
+      var button = current.buttons[i] || {};
+      var account = null;
+      current.accounts.forEach(function (a) { if (a.id === button.accountId) account = a; });
+      var row = ['v', String(button.label || '').slice(0, MAX_LABEL_CHARS),
+                 account ? String(account.handle || account.identifier || account.label || '')
+                           .slice(0, MAX_ACCOUNT_CHARS) : ''];
+      (button.options || []).slice(0, MAX_OPTIONS).forEach(function (option) {
+        row.push(String((option && option.label) || option || '').slice(0, MAX_LABEL_CHARS));
+      });
+      var size = utf8Length(row.join('\u001f')) + (i ? 1 : 0);
+      if (used + size > MAX_BLOB_BYTES) {
+        break;
+      }
+      used += size;
+      fits++;
+    }
+    return fits;
+  }
+
+  function save() {
+    var problems = [];
+
+    state.accounts.forEach(function (account, index) {
+      account.identifier = String(account.identifier || '').trim().replace(/^@/, '');
+      account.password = String(account.password || '').trim();
+      account.service = String(account.service || '').trim();
+      account.label = String(account.label || '').trim();
+      account.brokerUrl = String(account.brokerUrl || '').trim().replace(/\/+$/, '');
+      var name = accountName(account, index);
+      if (account.auth === 'broker') {
+        if (!account.brokerUrl) problems.push(name + ': needs a broker URL');
+        else if (!account.deviceToken) problems.push(name + ': not signed in through the broker yet');
+      } else if (!account.identifier) {
+        problems.push(name + ': needs a handle');
+      } else if (!account.password) {
+        problems.push(name + ': needs an app password');
+      }
+    });
+
+    if (!state.accounts.length && state.buttons.length) {
+      problems.push('Add an account for these buttons to post from');
+    }
+    state.buttons.forEach(function (button, index) {
+      var name = button.label || ('Button ' + (index + 1));
+      var parsed = parseRecord(button.record);
+      if (!parsed) { problems.push(name + ': record is not valid JSON'); return; }
+      var found = listVariables(parsed);
+      if (found.unknown.length) problems.push(name + ': unknown variable {{' + found.unknown[0] + '}}');
+      var declared = typeof parsed.$type === 'string' && NSID_RE.test(parsed.$type);
+      if (!declared && !NSID_RE.test(button.collection || '')) {
+        problems.push(name + ': needs a collection');
+      }
+      var wantsVoice = found.builtins.indexOf(VOICE) !== -1;
+      if (wantsVoice && found.users.length) {
+        problems.push(name + ': cannot mix {{$voice}} with {{' + found.users[0] + '}}');
+      } else if (found.users.length && !(button.options || []).length) {
+        problems.push(name + ': {{' + found.users[0] + '}} has no choices');
+      }
+      // Space writes need OAuth; catch it here with a clearer message than the PDS gives.
+      var poster = null;
+      state.accounts.forEach(function (a) { if (a.id === button.accountId) poster = a; });
+      if (button.accountId && !poster) {
+        // Its account was deleted; the watch would refuse it on press.
+        problems.push(name + ': its account is gone; pick another');
+      } else if (button.space && poster && poster.auth !== 'broker') {
+        problems.push(name + ': a space write needs a broker account');
+      } else if (button.spaceRequired && !button.space) {
+        problems.push(name + ': add the space it saves into');
+      }
+    });
+
+    if (state.buttons.length > MAX_ITEMS) {
+      problems.push('The watch shows at most ' + MAX_ITEMS + ' buttons');
+    }
+
+    // The list goes to the watch as one message, and rows that do not fit are
+    // dropped, so warn here.
+    var fits = countButtonsThatFit(state);
+    if (fits < state.buttons.length) {
+      problems.push('Too much to send: only the first ' + fits + ' buttons would reach the '
+        + 'watch. Shorten some labels or choices, or remove a button.');
+    }
+
+    if (problems.length) {
+      setStatus($('page-status'), 'bad', problems[0]);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    close({ accounts: state.accounts, buttons: state.buttons, infra: state.infra });
+  }
+
+  // wiring -----------------------------------------------------------------
+
+  // Clear Save's error as soon as anything is edited.
+  document.addEventListener('input', function () {
+    setStatus($('page-status'), null);
+  }, true);
+
+  $('add-account').addEventListener('click', function () {
+    state.accounts.push({
+      id: newAccountId(), label: '', auth: 'app-password',
+      identifier: '', password: '', service: '',
+      brokerUrl: DEFAULT_BROKER_URL, deviceToken: '', did: '', handle: ''
+    });
+    state.openAccount = state.accounts.length - 1;
+    state.open = -1;
+    render();
+    reveal('accounts', state.openAccount);
+  });
+  $('add').addEventListener('click', function () {
+    if (state.buttons.length >= MAX_ITEMS) {
+      setStatus($('page-status'), 'bad', 'The watch shows at most ' + MAX_ITEMS + ' buttons');
+      return;
+    }
+    var panel = $('starter-panel');
+    $('import-panel').hidden = true;
+    panel.hidden = !panel.hidden;
+    if (panel.hidden) {
+      return;
+    }
+
+    panel.textContent = '';
+    var list = document.createElement('div');
+    list.className = 'log';
+    var spaceRows = [];
+
+    STARTERS.forEach(function (starter) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'starter';
+      row.innerHTML = '<span><b>' + escapeHtml(starter.name) + '</b><br>' +
+                      '<span class="hint">' + escapeHtml(starter.hint) + '</span></span>';
+
+      // Space starters are only offered when an account can write to a space;
+      // the watch has room for only a short error.
+      var target = null;
+      if (starter.needsSpaces) {
+        target = firstSpaceAccount();
+        var blocker = target ? null : spaceBlocker(state.accounts[0], 0);
+        if (blocker) {
+          block(row, blocker);
+        } else {
+          spaceRows.push(row);
+        }
+      }
+
+      row.addEventListener('click', function () {
+        if (row.disabled) return;
+        var button = starter.build();
+        button.rkey = '';
+        button.validate = 'auto';
+        // Space buttons go to an account that can write to a space, others to
+        // the first account.
+        var chosen = starter.needsSpaces ? firstSpaceAccount() : null;
+        if (chosen) {
+          button.accountId = chosen.account.id;
+        } else {
+          button.accountId = state.accounts.length ? state.accounts[0].id : '';
+        }
+        state.buttons.push(button);
+        state.open = state.buttons.length - 1;
+        state.openAccount = -1;
+        panel.hidden = true;
+        render();
+        reveal('buttons', state.open);
+      });
+      list.appendChild(row);
+    });
+    panel.appendChild(list);
+
+    // The PDS check takes a round trip, so the row starts enabled and is
+    // disabled only if the answer is no.
+    if (spaceRows.length) {
+      probeSpaceAccounts().then(function (reason) {
+        if (reason) {
+          spaceRows.forEach(function (row) { block(row, reason); });
+        }
+      });
+    }
+  });
+
+  $('import').addEventListener('click', function () {
+    // Inline panel: prompt() never appears in this webview and wedges the page.
+    var panel = $('import-panel');
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) $('import-link').focus();
+  });
+
+  $('import-go').addEventListener('click', function () {
+    var raw = $('import-link').value.trim();
+    if (!raw) {
+      setStatus($('page-status'), 'bad', 'Paste a link first');
+      return;
+    }
+    importLink(raw).then(function (button) {
+      state.buttons.push(button);
+      state.open = state.buttons.length - 1;
+      state.openAccount = -1;
+      $('import-link').value = '';
+      $('import-panel').hidden = true;
+      render();
+      reveal('buttons', state.open);
+      setStatus($('page-status'), 'ok', 'Imported ' + (button.collection || 'draft') +
+        (button.space ? ' into a space' : ''));
+    }).catch(function (error) {
+      setStatus($('page-status'), 'bad', error.message);
+    });
+  });
+  $('infra-reset').addEventListener('click', function () {
+    state.infra = { resolver: '', plcDirectory: '', doh: '' };
+    render();
+    $('developer').open = true;
+    setStatus($('infra-status'), 'ok', 'Back to the defaults');
+  });
+
+  $('infra-test').addEventListener('click', function () {
+    // Resolve a known handle so a typo shows up here, before a button press.
+    var element = $('infra-status');
+    setStatus(element, 'busy', 'Resolving a test handle\u2026');
+    resolvePds('bsky.app', '')
+      .then(function (identity) {
+        setStatus(element, 'ok', 'Resolver works. bsky.app is on ' + identity.pds);
+      })
+      .catch(function (error) {
+        setStatus(element, 'bad', 'Resolver failed: ' + error.message);
+      });
+  });
+
+  $('save').addEventListener('click', save);
+  $('cancel').addEventListener('click', function () { close(null); });
+
+  // Exposed for the page tests.
+  window.__state = state;
+  window.__checkSpacesSupport = checkSpacesSupport;
+
+  render();
+})();
+</script>
+</body>
+</html>

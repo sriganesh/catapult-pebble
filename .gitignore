@@ -1,0 +1,9 @@
+build/
+node_modules/
+.DS_Store
+*.pbw
+.lock-waf_darwin_build
+
+# Local secrets
+.env
+.env.*

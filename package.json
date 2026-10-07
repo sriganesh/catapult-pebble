@@ -1,0 +1,75 @@
+{
+  "name": "catapult",
+  "author": "sri",
+  "version": "0.3.0",
+  "keywords": [
+    "pebble-app",
+    "atproto",
+    "bluesky",
+    "statusphere",
+    "permissioned-spaces",
+    "taproot",
+    "at.new"
+  ],
+  "private": true,
+  "scripts": {
+    "config": "node tools/build-config.js",
+    "build": "node tools/build-config.js && pebble clean && pebble build",
+    "test": "node --test tools/*.test.js",
+    "serve": "node tools/serve-pbw.js"
+  },
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Catapult",
+    "description": "Publish AT Protocol records from your wrist. One button press writes a record to your atproto repo: a Bluesky post, a Statusphere status, a voice note, or any lexicon you like.",
+    "uuid": "e5e0f1fe-48f5-45ad-be66-00a6166d2afc",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite",
+      "emery",
+      "flint",
+      "gabbro"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "capabilities": [
+      "configurable"
+    ],
+    "messageKeys": [
+      "MENU_BLOB",
+      "POST_INDEX",
+      "POST_OPTION",
+      "POST_TEXT",
+      "STATUS",
+      "DETAIL",
+      "REQ_SYNC",
+      "POST_NONCE",
+      "MENU_REV",
+      "POST_REV"
+    ],
+    "resources": {
+      "media": [
+        {
+          "type": "bitmap",
+          "name": "MENU_ICON",
+          "file": "images/menu-icon.png",
+          "menuIcon": true
+        },
+        {
+          "type": "bitmap",
+          "name": "SPLASH_LOGO",
+          "file": "images/splash-logo.png"
+        }
+      ]
+    }
+  },
+  "description": "Publish any atproto record, in any lexicon, from your Pebble. Post to Bluesky, set your Statusphere status, dictate posts and voice notes, and keep private notes in permissioned spaces (alpha).",
+  "devDependencies": {
+    "playwright-core": "^1.48.0"
+  }
+}
